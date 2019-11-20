@@ -47,7 +47,6 @@ def read_img(img_path):
     # rgb > ycbcr
     image = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
     image = image[:, :, 0]
-    image = image.astype('float') / 255
     return image
 
 def mod_crop(image, scale):
