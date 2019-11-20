@@ -27,9 +27,9 @@ class INRB(nn.Module):
         output = self.relu(out_res)
         return output
 
-class MsINSR(nn.Module):
+class MsINSR_Net(nn.Module):
     def __init__(self):
-        super(MsINSR, self).__init__()
+        super(MsINSR_Net, self).__init__()
         self.input = nn.Conv2d(1, 64, 3, stride=1, padding=1)
         self.INRB1 = INRB(64)
         self.INRB2 = INRB(64)
@@ -91,8 +91,7 @@ class D_Net(nn.Module):
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(512, 1024, kernel_size=1),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(1024, 1, kernel_size=1),
-            nn.Sigmoid()
+            nn.Conv2d(1024, 1, kernel_size=1)
         )
 
     def forward(self, x):
