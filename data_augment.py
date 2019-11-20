@@ -9,9 +9,9 @@ import numpy as np
 parser = argparse.ArgumentParser(description="PyTorch MsINSR")
 parser.add_argument("--Scale", type=int, default=4)
 parser.add_argument("--HRpath", type=str, default='data/DIV2K_train_HR')
-parser.add_argument("--Savepath", type=str, default='data/trainx4.h5')
+parser.add_argument("--Savepath", type=str, default='data/train_pre_x4.h5')
 parser.add_argument("--Cropsize", type=int, default=99)
-parser.add_argument("--Cropnum", type=int, default=100)
+parser.add_argument("--Cropnum", type=int, default=300)
 
 def data_aug():
     global opt
@@ -47,6 +47,7 @@ def read_img(img_path):
     # rgb > ycbcr
     image = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
     image = image[:, :, 0]
+    image = image.astype('float') / 255
     return image
 
 def mod_crop(image, scale):
