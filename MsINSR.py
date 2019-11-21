@@ -30,7 +30,7 @@ class INRB(nn.Module):
 class MsINSR_Net(nn.Module):
     def __init__(self):
         super(MsINSR_Net, self).__init__()
-        self.input = nn.Conv2d(1, 64, 3, stride=1, padding=1)
+        self.input = nn.Conv2d(3, 64, 3, stride=1, padding=1)
         self.INRB1 = INRB(64)
         self.INRB2 = INRB(64)
         self.INRB3 = INRB(64)
@@ -38,7 +38,7 @@ class MsINSR_Net(nn.Module):
         self.INRB5 = INRB(64)
         self.output = nn.Sequential(
             nn.Conv2d(64*(5+1), 64, 1, stride=1, padding=0),
-            nn.Conv2d(64, 1, 3, stride=1, padding=1),
+            nn.Conv2d(64, 3, 3, stride=1, padding=1),
             nn.Tanh()
         )
 
@@ -57,7 +57,7 @@ class D_Net(nn.Module):
     def __init__(self):
         super(D_Net, self).__init__()
         self.Net = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3, padding=1),
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1),

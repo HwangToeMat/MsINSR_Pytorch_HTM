@@ -44,9 +44,6 @@ def load_img(file_path):
 def read_img(img_path):
     # read image
     image = cv2.imread(img_path)
-    # rgb > ycbcr
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
-    image = image[:, :, 0]
     return image
 
 def mod_crop(image, scale):
@@ -54,7 +51,7 @@ def mod_crop(image, scale):
     w = image.shape[1]
     h = h - np.mod(h,scale)
     w = w - np.mod(w,scale)
-    return image[0:h,0:w]
+    return image[0:h,0:w,:]
 
 def random_crop(image, Cropnum, Cropsize, scale):
     sub_img = []
@@ -74,10 +71,10 @@ def img_downsize(img, scale):
     for _ in img:
         h = _.shape[0]
         w = _.shape[1]
-        img_list.append(_.reshape(1, h, w))
+        img_list.append(_.reshape(3, h, w))
         dst = cv2.resize(_, dsize=(0, 0), fx=1/scale, fy=1/scale, interpolation=cv2.INTER_CUBIC)
         dst = cv2.resize(dst, dsize=(0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-        dst_list.append(dst.reshape(1, h, w))
+        dst_list.append(dst.reshape(3, h, w))
     return dst_list, img_list
 
 def save_h5(sub_ip, sub_la, savepath):
