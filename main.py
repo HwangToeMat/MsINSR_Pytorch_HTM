@@ -20,9 +20,10 @@ parser.add_argument("--threads", type=int, default=4)
 parser.add_argument('--pretrained', default='', type=str)
 parser.add_argument('--datapath', default='data/train_pre_x4.h5', type=str)
 parser.add_argument("--gpus", default="0", type=str)
-parser.add_argument("--L1_parm", default=1, type=float)
-parser.add_argument("--Percept_parm", default=6e-3, type=float)
-parser.add_argument("--Gen_parm", default=1e-3, type=float)
+parser.add_argument("--L1_parm", default=1.0, type=float)
+parser.add_argument("--Percept_parm", default=0, type=float)
+parser.add_argument("--Gen_parm", default=0, type=float)
+parser.add_argument("--TV_parm", default=2e-8, type=float)
 
 def main():
     global opt, G_Net, D_Net , G_optim, D_optim
@@ -54,7 +55,7 @@ def main():
     print("===> Building model")
     G_Net = MsINSR_Net()
     D_Net = D_Net()
-    G_Loss = GeneratorLoss(opt.L1_parm, opt.Percept_parm, opt.Gen_parm)
+    G_Loss = GeneratorLoss()
     D_Loss = DiscriminatorLoss()
 
     # optionally copy weights from a checkpoint
@@ -97,18 +98,28 @@ def main():
                 HR = HR.cuda()
                 LR = LR.cuda()
             fake_img = G_Net(LR)
+        
+            # Adopted Loss Parameters
+            opt.Percept_parm = (6e-3*(epoch_ // 10)) 
+            opt.Gen_parm = (1e-3*(epoch_ // 10))
+            opt.L1_parm = 1.0 - (opt.Gen_parm + opt.Percept_parm)
 
             # Train Discriminator model
-            D_Net.zero_grad()
-            real_rate = D_Net(HR)
-            fake_rate = D_Net(fake_img)
-            d_loss = D_Loss(fake_rate, real_rate)
-            d_loss.backward(retain_graph=True)
-            D_optim.step()
+            if opt.Gen_parm != 0:
+                D_Net.zero_grad()
+                real_rate = D_Net(HR)
+                fake_rate = D_Net(fake_img)                
+                d_loss = D_Loss(fake_rate, real_rate)
+                d_loss.backward(retain_graph=True)
+                D_optim.step()
+            else:
+                real_rate = 0.5
+                fake_rate = 0.5
+                d_loss = 0.0
 
             # Train Generator model
             G_Net.zero_grad()
-            g_loss = G_Loss(fake_rate, real_rate, fake_img, HR)
+            g_loss = G_Loss(fake_rate, real_rate, fake_img, HR, L1_parm = opt.L1_parm, Percept_parm = opt.Percept_parm, Gen_parm = opt.Gen_parm)
             g_loss.backward()
             G_optim.step()
 
@@ -119,12 +130,18 @@ def main():
         model_out_path = "checkpoint/" + "MsINSR_Adam_epoch_{}.tar".format(epoch_)
         if not os.path.exists("checkpoint/"):
             os.makedirs("checkpoint/")
+        if opt.Gen_parm == 0:
+            D_state = 0
+            D_opt = 0
+        else:
+            D_state = D_Net.state_dict()
+            D_opt = D_optim.state_dict()
         torch.save({
                 'epoch': epoch_,
                 'G_Net_state_dict': G_Net.state_dict(),
-                'D_Net_state_dict': D_Net.state_dict(),
+                'D_Net_state_dict': D_state,
                 'G_optim_state_dict': G_optim.state_dict(),
-                'D_optim_state_dict': D_optim.state_dict()
+                'D_optim_state_dict': D_opt 
                 }, model_out_path)
         print("Checkpoint has been saved to the {}".format(model_out_path))
 

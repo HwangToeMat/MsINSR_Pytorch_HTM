@@ -36,11 +36,13 @@ class MsINSR_Net(nn.Module):
         self.INRB3 = INRB(64)
         self.INRB4 = INRB(64)
         self.INRB5 = INRB(64)
+        self.INRB6 = INRB(64)
+        self.INRB7 = INRB(64)
         self.output = nn.Sequential(
-            nn.Conv2d(64*(5+1), 64, 1, stride=1, padding=0),
-            nn.Conv2d(64, 3, 3, stride=1, padding=1),
-            nn.Tanh()
+            nn.Conv2d(64*(7+1), 64, 1, stride=1, padding=0),
+            nn.Conv2d(64, 3, 3, stride=1, padding=1)
         )
+        self.tanh = nn.Tanh()
 
     def forward(self, x):
         R_0 = self.input(x)
@@ -49,8 +51,11 @@ class MsINSR_Net(nn.Module):
         R_3 = self.INRB3(R_2)
         R_4 = self.INRB4(R_3)
         R_5 = self.INRB5(R_4)
-        output = self.output(torch.cat([R_0, R_1, R_2, R_3, R_4, R_5], 1))
-        output = (output+1)/2
+        R_6 = self.INRB6(R_5)
+        R_7 = self.INRB7(R_6)
+        output = self.output(torch.cat([R_0, R_1, R_2, R_3, R_4, R_5, R_6, R_7], 1))
+        output += x
+        output = (self.tanh(output)+1)/2
         return output
 
 class D_Net(nn.Module):
