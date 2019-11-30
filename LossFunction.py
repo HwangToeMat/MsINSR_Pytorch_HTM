@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torchvision.models.vgg import vgg16
 import torch.backends.cudnn as cudnn
+import numpy as np
 
 class TVLoss(nn.Module):
     def __init__(self, TVLoss_weight = 1):
@@ -31,28 +32,18 @@ class GeneratorLoss(nn.Module):
         self.BCE_stable = nn.BCEWithLogitsLoss()
         self.TV_Loss = TVLoss()
 
-    def forward(self, fake_rate, real_rate, SR, HR, L1_parm = 1, Percept_parm = 0, Gen_parm =0, TV_parm = 2e-8):
+    def forward(self, SR, HR, L1_parm = 1, Percept_parm = 0, Gen_parm =0, TV_parm = 2e-8):
         # L1 Loss
         L1_loss = self.L1_loss(SR, HR)
         # VGG Loss
         VGG_loss = self.L1_loss(self.vgg_loss(SR), self.vgg_loss(HR))
-        # Relative Generator loss
-        if Gen_parm != 0:
-            Rel_G_loss = (self.BCE_stable(real_rate - torch.mean(fake_rate), torch.zeros(fake_rate.size(0)).cuda()) +
-                    self.BCE_stable(fake_rate - torch.mean(real_rate), torch.ones(fake_rate.size(0)).cuda()))/2
-        else:
-            Rel_G_loss = 0
         # TV Loss
         TV_loss = self.TV_Loss(SR)
-        return L1_parm*L1_loss + Percept_parm*VGG_loss + Gen_parm*Rel_G_loss + TV_parm*TV_loss
+        return L1_parm*L1_loss + Percept_parm*VGG_loss + TV_parm*TV_loss
 
-class DiscriminatorLoss(nn.Module):
-    def __init__(self):
-        super(DiscriminatorLoss, self).__init__()
-        self.BCE_stable = nn.BCEWithLogitsLoss()
+def PSNR(HR, fake_img):
 
-    def forward(self, fake_rate, real_rate):
-        # Relative Discriminator loss
-        Rel_D_loss = (self.BCE_stable(real_rate - torch.mean(fake_rate), torch.ones(fake_rate.size(0)).cuda()) +
-                    self.BCE_stable(fake_rate - torch.mean(real_rate), torch.zeros(fake_rate.size(0)).cuda()))/2
-        return Rel_D_loss
+    mse = nn.MSELoss()
+    loss = mse(HR, fake_img)
+    psnr = 10 * np.log10(1 / (loss.item() + 1e-10))
+    return psnr
